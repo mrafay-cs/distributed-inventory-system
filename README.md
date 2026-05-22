@@ -109,10 +109,3 @@ python core/secure_query_retrieval.py
 
 The program runs through the terminal and displays the full workflow, including hashing, RSA signing, verification, consensus voting, multi-signature approval, encryption, and decryption.
 
-
-Also add this:
-
-```markdown
-## Note
-
-This project is designed as a terminal-based simulation. The command-line output is used to demonstrate each
