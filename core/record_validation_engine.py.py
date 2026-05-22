@@ -2,12 +2,6 @@ import hashlib
 import json
 from pathlib import Path
 
-
-# task 1 + task 2: secure record insertion
-# this version uses separate files for each inventory node
-# each node has its own key file and record file
-
-# this makes sure json files are loaded from the same folder as this python file
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -28,8 +22,7 @@ record_files = {
 
 
 def load_json_file(file_name):
-    # loads one json file from the same folder as this python file
-    # this function is not a separate file, it is just a helper function
+
     file_path = BASE_DIR / file_name
 
     try:
@@ -56,8 +49,7 @@ def load_json_file(file_name):
 
 
 def save_json_file(file_name, data):
-    # saves updated data back into the json file
-    # this is used after calculating n, phi, d and after storing records
+
     file_path = BASE_DIR / file_name
 
     with open(file_path, "w", encoding="utf-8") as file:
@@ -65,7 +57,7 @@ def save_json_file(file_name, data):
 
 
 def load_inventory_keys():
-    # loads all four key files into the program
+
     keys = {}
 
     for node_name, file_name in key_files.items():
@@ -75,7 +67,7 @@ def load_inventory_keys():
 
 
 def load_inventory_databases():
-    # loads all four record files into the program
+
     databases = {}
 
     for node_name, file_name in record_files.items():
@@ -85,8 +77,7 @@ def load_inventory_databases():
 
 
 def extended_gcd(a, b):
-    # helper function used to calculate the modular inverse
-    # this helps us calculate the rsa private key d
+
     if a == 0:
         return b, 0, 1
 
@@ -99,7 +90,7 @@ def extended_gcd(a, b):
 
 
 def mod_inverse(e, phi):
-    # calculates d where: e * d mod phi = 1
+
     gcd_value, x, _ = extended_gcd(e, phi)
 
     if gcd_value != 1:
@@ -109,14 +100,12 @@ def mod_inverse(e, phi):
 
 
 def record_to_message(record):
-    # converts 008,20,45,D into 0082045D
-    # all nodes use the same message format before hashing
+
     return record["item_id"] + record["quantity"] + record["price"] + record["location"]
 
 
 def md5_to_decimal(message):
-    # hashes the message using md5
-    # then converts the md5 hex output into decimal because rsa works with numbers
+
     md5_hex = hashlib.md5(message.encode()).hexdigest()
     md5_decimal = int(md5_hex, 16)
 
@@ -124,8 +113,7 @@ def md5_to_decimal(message):
 
 
 def generate_rsa_values(inventory_keys):
-    # derives n, phi(n), and d from p, q, and e
-    # then saves the computed values back into the key files
+
     print("\n========== rsa parameter setup ==========")
 
     for node_name, key_data in inventory_keys.items():
@@ -154,8 +142,7 @@ def generate_rsa_values(inventory_keys):
 
 
 def get_record_from_user():
-    # input section for the demo
-    # the marker can type the record that will be signed
+  
     print("\n========== new inventory record input ==========")
 
     item_id = input("enter item id, example 008: ").strip()
@@ -177,8 +164,7 @@ def get_record_from_user():
 
 
 def get_sender_from_user():
-    # lets the marker choose which inventory node signs the record
-    # example: choose 1 so inventory a signs the data
+
     print("\nchoose the inventory node that will sign the record:")
     print("1. Inventory A")
     print("2. Inventory B")
@@ -201,15 +187,14 @@ def get_sender_from_user():
 
 
 def sign_record(record, sender_node, inventory_keys):
-    # task 1 signing step
-    # sender signs the md5 decimal hash using its private key
+
     message = record_to_message(record)
     md5_hex, md5_decimal = md5_to_decimal(message)
 
     sender_d = inventory_keys[sender_node]["d"]
     sender_n = inventory_keys[sender_node]["n"]
 
-    # rsa signing formula: signature = m^d mod n
+
     signature = pow(md5_decimal, sender_d, sender_n)
 
     print("\n========== signing process ==========")
@@ -232,8 +217,7 @@ def sign_record(record, sender_node, inventory_keys):
 
 
 def verify_record(signed_package, verifier_node, inventory_keys):
-    # task 1 verification step
-    # verifier uses the sender's public key to recover the signed hash
+
     record = signed_package["record"]
     sender_node = signed_package["sender"]
     signature = signed_package["signature"]
@@ -244,7 +228,6 @@ def verify_record(signed_package, verifier_node, inventory_keys):
     sender_e = inventory_keys[sender_node]["e"]
     sender_n = inventory_keys[sender_node]["n"]
 
-    # rsa verification formula: recovered_hash = signature^e mod n
     recovered_hash_decimal = pow(signature, sender_e, sender_n)
 
     is_valid = recovered_hash_decimal == recomputed_hash_decimal
@@ -263,7 +246,7 @@ def verify_record(signed_package, verifier_node, inventory_keys):
 
 
 def validate_record_format(record):
-    # basic record format check before voting
+
     required_fields = ["item_id", "quantity", "price", "location"]
 
     for field in required_fields:
@@ -286,7 +269,7 @@ def validate_record_format(record):
 
 
 def record_exists(database_data, record):
-    # checks if the exact same record already exists in one node's local file
+
     for existing_record in database_data["records"]:
         if existing_record == record:
             return True
@@ -295,8 +278,7 @@ def record_exists(database_data, record):
 
 
 def validator_vote(signed_package, validator_node, inventory_keys, inventory_databases):
-    # task 2 validator step
-    # each validator checks format, signature, and duplicate status
+
     record = signed_package["record"]
 
     print(f"\n----- {validator_node} poa validator check -----")
@@ -318,9 +300,7 @@ def validator_vote(signed_package, validator_node, inventory_keys, inventory_dat
 
 
 def run_poa_consensus(signed_package, inventory_keys, inventory_databases):
-    # task 2 consensus step
-    # proof of authority is used because the inventory nodes are known validators
-    # simplified rule: at least 3 out of 4 validators must vote accept
+
     print("\n========== proof of authority consensus ==========")
     print("consensus mechanism selected: proof of authority")
     print("validators: Inventory A, Inventory B, Inventory C, Inventory D")
@@ -361,7 +341,7 @@ def run_poa_consensus(signed_package, inventory_keys, inventory_databases):
 
 
 def store_record_in_all_nodes(record, inventory_databases):
-    # after consensus succeeds, each node stores the accepted record
+
     print("\n========== storing accepted record ==========")
 
     for node_name, database_data in inventory_databases.items():
@@ -372,7 +352,7 @@ def store_record_in_all_nodes(record, inventory_databases):
 
 
 def show_local_databases(inventory_databases):
-    # prints the current records from each node's record file
+
     print("\n========== local inventory record files ==========")
 
     for node_name, database_data in inventory_databases.items():
@@ -383,7 +363,7 @@ def show_local_databases(inventory_databases):
 
 
 def run_valid_record_lifecycle(inventory_keys, inventory_databases):
-    # normal flow: input record -> sign -> verify -> consensus -> store
+
     record = get_record_from_user()
     sender_node = get_sender_from_user()
 
@@ -400,7 +380,7 @@ def run_valid_record_lifecycle(inventory_keys, inventory_databases):
 
 
 def run_tampered_record_lifecycle(inventory_keys, inventory_databases):
-    # tampered flow: sign original record, then change quantity before validation
+
     original_record = get_record_from_user()
     sender_node = get_sender_from_user()
 
