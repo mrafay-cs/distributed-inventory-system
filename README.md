@@ -87,3 +87,32 @@ python core/secure_query_retrieval.py
 - cloud deployment
 - web-based dashboard
 - stronger hashing algorithms
+
+## How to Run
+
+Clone the repository:
+
+```bash
+git clone https://github.com/mrafay-cs/distributed-inventory-system.git
+
+Move into the project folder:
+
+cd distributed-inventory-system
+
+Run the record validation and consensus workflow:
+
+python core/record_validation_engine.py
+
+Run the secure query retrieval workflow:
+
+python core/secure_query_retrieval.py
+
+The program runs through the terminal and displays the full workflow, including hashing, RSA signing, verification, consensus voting, multi-signature approval, encryption, and decryption.
+
+
+Also add this:
+
+```markdown
+## Note
+
+This project is designed as a terminal-based simulation. The command-line output is used to demonstrate each
